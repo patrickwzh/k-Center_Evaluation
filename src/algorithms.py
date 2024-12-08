@@ -5,12 +5,13 @@ from typing import List, Tuple
 import time
 import pickle
 
-random.seed(time.time())
-
-def eval(algorithm, data_path):
+def eval(algorithm, data_path, p=1):
     data = utils.load_data(data_path)
     algorithm_class = globals()[algorithm]
-    algo_instance = algorithm_class(data)
+    if algorithm == 'Scr_p':
+        algo_instance = algorithm_class(data, p)
+    else:
+        algo_instance = algorithm_class(data)
     start = time.time()
     result = algo_instance.run()
     end = time.time()
@@ -23,6 +24,7 @@ class Algorithm:
         self.m = len(data.allDists)
         self.k = data.k
         self.data = data
+        random.seed(time.time())
     
     def setDist(self, v, C):
         if C == []:
@@ -157,6 +159,110 @@ class CDSh_p(CDS):
             mid = (low + high) // 2
             C = min([self.check(self.data.allDists[mid]) for _ in range(self.n)], key=lambda x: self.makespan(x))
             if self.makespan(C) < minMakespan:
+                high = mid
+                res = C
+            else:
+                low = mid + 1
+        return res, self.makespan(res)
+
+class Scr(Algorithm):
+    def __init__(self, data):
+        super().__init__(data)
+    
+    def getNeighbors(self, v, r):
+        return [u for u in range(1, self.n + 1) if self.data.dist(v, u) <= r]
+
+    def check(self, r):
+        covcnt = [0] * (self.n + 1)
+        D = set()
+        score = [0] * (self.n + 1)
+        neighbor = [[]] * (self.n + 1)
+        for i in range(1, self.n + 1):
+            neighbor[i] = self.getNeighbors(i, r)
+            covcnt[i] = len(neighbor[i])
+            score[i] = covcnt[i]
+        for _ in range(self.n):
+            x = min(range(1, self.n + 1), key=lambda x: score[x])
+            y0 = 0
+            for y in neighbor[x]:
+                if covcnt[y] == 1:
+                    y0 = y
+                    break
+            if y0:
+                D.add(x)
+                for y in neighbor[x]:
+                    covcnt[y] = 0
+            else:
+                for y in neighbor[x]:
+                    if covcnt[y] > 0:
+                        covcnt[y] -= 1
+                        score[y] += 1
+            score[x] = float('inf')
+        return D
+    
+    def run(self):
+        low, high = 0, len(self.data.allDists) - 1
+        res = None
+        # print(self.data.allDists)
+        while low < high:
+            mid = (low + high) // 2
+            C = self.check(self.data.allDists[mid])
+            if len(C) <= self.k:
+                high = mid
+                res = C
+            else:
+                low = mid + 1
+        return res, self.makespan(res)
+
+class Scr_p(Scr):
+    def __init__(self, data, p):
+        super().__init__(data)
+        self.p = p
+    
+    def topp(self, score, p):
+        top_nodes = []
+        for i in range(1, self.n + 1):
+            if len(top_nodes) < p:
+                top_nodes.append(i)
+            else:
+                top_nodes = sorted(top_nodes + [i], key=lambda x: score[x])[:p]
+        return top_nodes
+
+    def check(self, r):
+        covcnt = [0] * (self.n + 1)
+        D = set()
+        score = [0] * (self.n + 1)
+        neighbor = [[]] * (self.n + 1)
+        for i in range(1, self.n + 1):
+            neighbor[i] = self.getNeighbors(i, r)
+            covcnt[i] = len(neighbor[i])
+            score[i] = covcnt[i]
+        for _ in range(self.n):
+            x = random.choice(self.topp(score, self.p))
+            y0 = 0
+            for y in neighbor[x]:
+                if covcnt[y] == 1:
+                    y0 = y
+                    break
+            if y0:
+                D.add(x)
+                for y in neighbor[x]:
+                    covcnt[y] = 0
+            else:
+                for y in neighbor[x]:
+                    if covcnt[y] > 0:
+                        covcnt[y] -= 1
+                        score[y] += 1
+            score[x] = float('inf')
+        return D
+    
+    def run(self):
+        low, high = 0, len(self.data.allDists) - 1
+        res = None
+        while low < high:
+            mid = (low + high) // 2
+            C = min([self.check(self.data.allDists[mid]) for _ in range(self.n)], key=lambda x: len(x))
+            if len(C) <= self.k:
                 high = mid
                 res = C
             else:

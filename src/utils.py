@@ -69,3 +69,159 @@ def load_data(data_path):
     print(f"Saving preprocessed data to {preprocessed_path}...")
     data.save(preprocessed_path)
     return data
+
+
+
+def compute_results(file_path):
+    import math
+
+    results = {}  # {(alg_name, data_num): {'make_span': [...], 'time': [...]}}
+    with open(file_path, 'r') as file:
+        lines = file.readlines()
+    current_key = None
+    for line in lines:
+        line = line.strip()
+        if line.startswith('Algorithm:'):
+            # Parse Algorithm and Data
+            parts = line.split(',')
+            alg_name = parts[0].split(':')[1].strip()
+            data_part = parts[1].split(':')[1].strip()
+            # Extract data_num from data_part (e.g., './data/pmed1.txt' -> '1')
+            data_num = data_part.split('pmed')[-1].split('.txt')[0]
+            if alg_name == 'Scr_p':
+                p_num = parts[2].split(':')[1].strip()
+                alg_name += f'_{p_num}'
+            current_key = (alg_name, data_num)
+            if current_key not in results:
+                results[current_key] = {'make_span': [], 'time': []}
+        elif line.startswith('- Make-span:'):
+            # Parse Make-span and Time
+            parts = line.split(',')
+            make_span = int(parts[0].split(':')[1].strip())
+            time = float(parts[1].split(':')[1].strip())
+            # Append to results
+            results[current_key]['make_span'].append(make_span)
+            results[current_key]['time'].append(time)
+    # Compute averages and standard deviations
+    final_results = {}
+    for key, value in results.items():
+        make_span_list = value['make_span']
+        time_list = value['time']
+        make_span_avg = sum(make_span_list) / len(make_span_list)
+        make_span_std = math.sqrt(sum((x - make_span_avg) ** 2 for x in make_span_list) / len(make_span_list))
+        time_avg = sum(time_list) / len(time_list)
+        time_std = math.sqrt(sum((x - time_avg) ** 2 for x in time_list) / len(time_list))
+        final_results[key] = {
+            'make_span_avg': make_span_avg,
+            'make_span_stddev': make_span_std,
+            'time_avg': time_avg,
+            'time_stddev': time_std
+        }
+    return final_results
+
+def plot_make_span(data):
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+
+    # # Set up PGF backend
+    # plt.rcParams.update({
+    #     "pgf.texsystem": "pdflatex",  # Use pdflatex
+    #     "text.usetex": True,          # Use LaTeX for text rendering
+    #     "pgf.preamble": r"\usepackage{amsmath}"  # Load extra packages
+        
+    # })
+
+    x = np.arange(1, 41)
+    algorithms = ['Gon', 'HS', 'CDS', 'CDSh', 'CDSh_p', 'Scr', 'Gr']
+    opt = [127, 98, 93, 74, 48, 84, 64, 55, 37, 20, 59, 51, 35, 26, 18, 47, 39, 28, 18, 13, 40, 38, 22, 15, 11, 38, 32, 18, 13, 9, 30, 29, 15, 11, 30, 27, 15, 29, 23, 13]
+    y = {}
+    yerr = {}
+    datframe = {'x': x}
+    datframe2 = {'Algorithms': algorithms, 'Avg': [], 'Std': []}
+    for alg in algorithms:
+        y[alg] = []
+        for i in range(1, 41):
+            if (alg, str(i)) not in data:
+                break
+            else:
+                y[alg].append(data[(alg, str(i))]['make_span_avg'])
+        y[alg] = np.array(y[alg], dtype=float)
+        # y[alg] = np.array([data.get((alg, str(i)), {}).get('make_span_avg', None) for i in range(1, 41)], dtype=float)
+        y[alg] /= np.array(opt[:len(y[alg])], dtype=float)
+        yerr[alg] = []
+        for i in range(1, 41):
+            if (alg, str(i)) not in data:
+                break
+            else:
+                yerr[alg].append(data[(alg, str(i))]['make_span_stddev'])
+        yerr[alg] = np.array(yerr[alg], dtype=float)
+        # yerr[alg] = np.array([data.get((alg, str(i)), {}).get('make_span_stddev', None) for i in range(1, 41)], dtype=float)
+        yerr[alg] /= np.array(opt[:len(yerr[alg])], dtype=float)
+        datframe[alg] = y[alg]
+        datframe[alg + '_error'] = yerr[alg]
+        datframe2['Avg'].append(np.mean(y[alg]))
+        datframe2['Std'].append(np.mean(yerr[alg]))
+        # plt.errorbar(x, y, yerr=yerr, label=alg)
+    # df = pd.DataFrame(datframe)
+    # df.to_csv('../data.csv', index=False)
+    df2 = pd.DataFrame(datframe2)
+    df2.to_csv('data2.csv', index=False)
+    # plt.xlabel('Data')
+    # plt.ylabel('Empirical Approximation Ratio')
+    # plt.legend()
+    # plt.title('Empirical Approximation Ratio of Different Algorithms')
+    # # plt.show()
+    # plt.savefig('make_span.pgf')
+
+def plot_time(data):
+    import matplotlib.pyplot as plt
+    import numpy as np
+    import pandas as pd
+
+    # # Set up PGF backend
+    # plt.rcParams.update({
+    #     "pgf.texsystem": "pdflatex",  # Use pdflatex
+    #     "text.usetex": True,          # Use LaTeX for text rendering
+    #     "pgf.preamble": r"\usepackage{amsmath}"  # Load extra packages
+        
+    # })
+
+    x = np.arange(1, 41)
+    algorithms = ['Gon', 'HS', 'CDS', 'CDSh', 'CDSh_p', 'Scr', 'Gr']
+    y = {}
+    yerr = {}
+    datframe = {'x': x}
+    datframe2 = {'Algorithms': algorithms, 'Avg': [], 'Std': []}
+    for alg in algorithms:
+        y[alg] = []
+        for i in range(1, 41):
+            if (alg, str(i)) not in data:
+                break
+            else:
+                y[alg].append(data[(alg, str(i))]['time_avg'])
+        y[alg] = np.array(y[alg], dtype=float)
+        # y[alg] = np.array([data.get((alg, str(i)), {}).get('time_avg', None) for i in range(1, 41)], dtype=float)
+        yerr[alg] = []
+        for i in range(1, 41):
+            if (alg, str(i)) not in data:
+                break
+            else:
+                yerr[alg].append(data[(alg, str(i))]['time_stddev'])
+        yerr[alg] = np.array(yerr[alg], dtype=float)
+        # yerr[alg] = np.array([data.get((alg, str(i)), {}).get('time_stddev', None) for i in range(1, 41)], dtype=float)
+        datframe[alg] = y[alg]
+        datframe[alg + '_error'] = yerr[alg]
+        datframe2['Avg'].append(np.mean(y[alg]))
+        datframe2['Std'].append(np.mean(yerr[alg]))
+        # plt.errorbar(x, y, yerr=yerr, label=alg)
+    # df = pd.DataFrame(datframe)
+    # df.to_csv('../data_time.csv', index=False)
+    df2 = pd.DataFrame(datframe2)
+    df2.to_csv('data2_time.csv', index=False)
+    # plt.xlabel('Data')
+    # plt.ylabel('Empirical Approximation Ratio')
+    # plt.legend()
+    # plt.title('Empirical Approximation Ratio of Different Algorithms')
+    # # plt.show()
+    # plt.savefig('make_span.pgf')
