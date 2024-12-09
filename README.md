@@ -10,3 +10,5 @@ This repository provides a comprehensive examination of the metric $k$-center pr
 - `main.py`: Main script to run experiments and evaluations
 
 Note that there is an `Scr_p` algorithm in `algorithms.py` that is not mentioned in the survey. Actually, this algorithm is invented by the author based on the Scr algorithm and the idea of CDSh+ algorithm. However, this algorithm does not perform well in the experiments, hence it is not included in the survey.
+
+To evaluate the algorithms, use `run()` function in `main.py` and run the script.
