@@ -2,6 +2,8 @@
 
 This repository provides a comprehensive examination of the metric $k$-center problem, including implementations of various approximation and heuristic algorithms, and experiments evaluating their practical performance. The data is collected from the [OR-Library](http://people.brunel.ac.uk/~mastjjb/jeb/orlib/files/) `pmed` datasets.
 
+The algorithms include: Gon, Sh, HS, Gr, CDS, CDSh, CDSh+, Scr, LS, LS Scr, SA Swp, SA Swp Scr, and Scr_p (not mentioned in the survey).
+
 ## Repository Structure
 
 - `src/`
