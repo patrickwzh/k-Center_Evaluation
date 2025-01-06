@@ -7,9 +7,15 @@ def run():
     # data_files = {'CDS': [f'./data/pmed{i}.txt' for i in range(1, 6)],
     #               'CDSh': [f'./data/pmed{i}.txt' for i in range(1, 41)],
     #               'CDSh_p': [f'./data/pmed{i}.txt' for i in range(1, 11)]}
-    algorithms = ['Scr_p']
-    data_files = {'Scr': [f'./data/pmed{i}.txt' for i in range(1, 41)],
-              'Scr_p': [f'./data/pmed{i}.txt' for i in range(1, 11)]}
+    # algorithms = ['Scr_p']
+    # data_files = {'Scr': [f'./data/pmed{i}.txt' for i in range(1, 41)],
+    #           'Scr_p': [f'./data/pmed{i}.txt' for i in range(1, 11)]}
+    # algorithms = ['LS']
+    # data_files = {'LS': [f'./data/pmed{i}.txt' for i in range(1, 41)]}
+    # algorithms = ['LS_Scr']
+    # data_files = {'LS_Scr': [f'./data/pmed{i}.txt' for i in range(1, 41)]}
+    algorithms = ['SA_Swp_Scr']
+    data_files = {'SA_Swp_Scr': [f'./data/pmed{i}.txt' for i in range(1, 41)]}
     with open('./eval_result.txt', 'a') as result_file:
         for algorithm in algorithms:
             for data_path in data_files[algorithm]:
@@ -32,3 +38,4 @@ def compute():
 
 if __name__ == '__main__':
     compute()
+    # run()

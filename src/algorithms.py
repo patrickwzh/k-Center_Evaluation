@@ -3,6 +3,7 @@ import random
 from . import utils
 from typing import List, Tuple
 import time
+import math
 import pickle
 
 def eval(algorithm, data_path, p=1):
@@ -21,7 +22,8 @@ def eval(algorithm, data_path, p=1):
 class Algorithm:
     def __init__(self, data):
         self.n = data.n
-        self.m = len(data.allDists)
+        self.mTot = len(data.allDists)
+        self.m = data.m
         self.k = data.k
         self.data = data
         random.seed(time.time())
@@ -268,3 +270,119 @@ class Scr_p(Scr):
             else:
                 low = mid + 1
         return res, self.makespan(res)
+
+class LS(Algorithm):
+    def __init__(self, data):
+        super().__init__(data)
+    
+    def getNearest(self, C, i):
+        return min(range(self.k), key=lambda x: self.data.dist(i, C[x]))
+    
+    def pickCenter(self, S):
+        return min(S, key=lambda x: max([self.data.dist(x, s) for s in S]))
+    
+    def runOnce(self, C=[]):
+        changed = True
+        C += random.sample([i for i in range(1, self.n + 1) if i not in C], self.k - len(C))
+        while changed:
+            changed = False
+            nearest = [set() for _ in range(self.k)]
+            for i in range(1, self.n + 1):
+                nearest[self.getNearest(C, i)].add(i)
+            C_new = [self.pickCenter(nearest[i]) for i in range(self.k)]
+            if self.makespan(C_new) < self.makespan(C):
+                C = C_new
+                changed = True
+        return C, self.makespan(C)
+    
+    def run(self):
+        res = min([self.runOnce(C=[]) for _ in range(5)], key=lambda x: x[1])
+        return res
+
+class LS_Scr(LS):
+    def __init__(self, data):
+        super().__init__(data)
+        self.scr = Scr(data)
+    
+    def run(self):
+        res = min([self.runOnce(list(self.scr.run()[0])) for _ in range(5)], key=lambda x: x[1])
+        return res
+
+class SA(LS):
+    def __init__(self, data):
+        super().__init__(data)
+        self.sparseness = 1 / (self.k * (math.log(2.0 * self.m / self.n) / math.log(self.n)) ** 2)
+    
+    def modify(self, C):
+        pass
+    
+    def runOnce(self, C=[], T=1.0):
+        C += random.sample([i for i in range(1, self.n + 1) if i not in C], self.k - len(C))
+        initial = self.makespan(C)
+        self.T = T * initial
+        alpha = 0.99
+        while self.T > 1e-8 * initial:
+            C_new = self.modify(C)
+            delta = self.makespan(C_new) - self.makespan(C)
+            if delta < 0 or random.random() < math.exp(-delta / self.T):
+                C = C_new
+            self.T *= alpha
+        return C, self.makespan(C)
+
+class SA_Swp(SA):
+    def __init__(self, data):
+        super().__init__(data)
+        self.scr = Scr(data)
+
+    def modify(self, C):
+        C_new = C.copy()
+        c_idx = random.randrange(self.k)
+        candidates = [i for i in range(1, self.n+1) if i not in C]
+        new_center = random.choice(candidates)
+        old_center = C_new[c_idx]
+        C_new[c_idx] = new_center
+        return C_new
+
+class SA_Gon(SA):
+    def __init__(self, data):
+        super().__init__(data)
+    
+    def modify(self, C):
+        C_new = C.copy()
+        c_idx = random.randrange(self.k)
+        old_center = C_new.pop(c_idx)
+        candidates = [i for i in range(1, self.n+1) if i not in C]
+        new_center = max(candidates, key=lambda x: self.setDist(x, C_new))
+        C_new.append(new_center)
+        return C_new
+
+class SA_Gon_Scr(SA_Gon):
+    def __init__(self, data):
+        super().__init__(data)
+        self.scr = Scr(data)
+    
+    def run(self):
+        res = min([self.runOnce(C=list(self.scr.run()[0]), T=0.1) for _ in range(3)], key=lambda x: x[1])
+        return res
+
+class SA_Swp_Scr(SA_Swp):
+    def __init__(self, data):
+        super().__init__(data)
+        self.scr = Scr(data)
+    
+    def runOnce(self, C=[], T=1.0):
+        C += random.sample([i for i in range(1, self.n + 1) if i not in C], self.k - len(C))
+        initial = self.makespan(C)
+        self.T = T * initial
+        alpha = math.exp(-0.01 * self.sparseness)
+        while self.T > 1e-8 * initial:
+            C_new = self.modify(C)
+            delta = self.makespan(C_new) - self.makespan(C)
+            if delta < 0 or random.random() < math.exp(-delta / self.T):
+                C = C_new
+            self.T *= alpha
+        return C, self.makespan(C)
+    
+    def run(self):
+        res = min([self.runOnce(C=list(self.scr.run()[0]), T=math.exp(-3.0 / self.sparseness)) for _ in range(3)], key=lambda x: x[1])
+        return res

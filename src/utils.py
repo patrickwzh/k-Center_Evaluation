@@ -133,7 +133,7 @@ def plot_make_span(data):
     # })
 
     x = np.arange(1, 41)
-    algorithms = ['Gon', 'HS', 'CDS', 'CDSh', 'CDSh_p', 'Scr', 'Gr']
+    algorithms = ['Gon', 'HS', 'CDS', 'CDSh', 'CDSh_p', 'Scr', 'Gr', 'LS', 'LS_Scr', 'SA_Swp', 'SA_Swp_Scr']
     opt = [127, 98, 93, 74, 48, 84, 64, 55, 37, 20, 59, 51, 35, 26, 18, 47, 39, 28, 18, 13, 40, 38, 22, 15, 11, 38, 32, 18, 13, 9, 30, 29, 15, 11, 30, 27, 15, 29, 23, 13]
     y = {}
     yerr = {}
@@ -146,8 +146,8 @@ def plot_make_span(data):
                 break
             else:
                 y[alg].append(data[(alg, str(i))]['make_span_avg'])
-        y[alg] = np.array(y[alg], dtype=float)
-        # y[alg] = np.array([data.get((alg, str(i)), {}).get('make_span_avg', None) for i in range(1, 41)], dtype=float)
+        # y[alg] = np.array(y[alg], dtype=float)
+        y[alg] = np.array([data.get((alg, str(i)), {}).get('make_span_avg', None) for i in range(1, 41)], dtype=float)
         y[alg] /= np.array(opt[:len(y[alg])], dtype=float)
         yerr[alg] = []
         for i in range(1, 41):
@@ -155,18 +155,18 @@ def plot_make_span(data):
                 break
             else:
                 yerr[alg].append(data[(alg, str(i))]['make_span_stddev'])
-        yerr[alg] = np.array(yerr[alg], dtype=float)
-        # yerr[alg] = np.array([data.get((alg, str(i)), {}).get('make_span_stddev', None) for i in range(1, 41)], dtype=float)
+        # yerr[alg] = np.array(yerr[alg], dtype=float)
+        yerr[alg] = np.array([data.get((alg, str(i)), {}).get('make_span_stddev', None) for i in range(1, 41)], dtype=float)
         yerr[alg] /= np.array(opt[:len(yerr[alg])], dtype=float)
         datframe[alg] = y[alg]
         datframe[alg + '_error'] = yerr[alg]
         datframe2['Avg'].append(np.mean(y[alg]))
         datframe2['Std'].append(np.mean(yerr[alg]))
         # plt.errorbar(x, y, yerr=yerr, label=alg)
-    # df = pd.DataFrame(datframe)
-    # df.to_csv('../data.csv', index=False)
-    df2 = pd.DataFrame(datframe2)
-    df2.to_csv('data2.csv', index=False)
+    df = pd.DataFrame(datframe)
+    df.to_csv('../data.csv', index=False)
+    # df2 = pd.DataFrame(datframe2)
+    # df2.to_csv('data2.csv', index=False)
     # plt.xlabel('Data')
     # plt.ylabel('Empirical Approximation Ratio')
     # plt.legend()
@@ -188,7 +188,7 @@ def plot_time(data):
     # })
 
     x = np.arange(1, 41)
-    algorithms = ['Gon', 'HS', 'CDS', 'CDSh', 'CDSh_p', 'Scr', 'Gr']
+    algorithms = ['Gon', 'HS', 'CDS', 'CDSh', 'CDSh_p', 'Scr', 'Gr', 'LS', 'LS_Scr', 'SA_Swp', 'SA_Swp_Scr']
     y = {}
     yerr = {}
     datframe = {'x': x}
@@ -200,25 +200,25 @@ def plot_time(data):
                 break
             else:
                 y[alg].append(data[(alg, str(i))]['time_avg'])
-        y[alg] = np.array(y[alg], dtype=float)
-        # y[alg] = np.array([data.get((alg, str(i)), {}).get('time_avg', None) for i in range(1, 41)], dtype=float)
+        # y[alg] = np.array(y[alg], dtype=float)
+        y[alg] = np.array([data.get((alg, str(i)), {}).get('time_avg', None) for i in range(1, 41)], dtype=float)
         yerr[alg] = []
         for i in range(1, 41):
             if (alg, str(i)) not in data:
                 break
             else:
                 yerr[alg].append(data[(alg, str(i))]['time_stddev'])
-        yerr[alg] = np.array(yerr[alg], dtype=float)
-        # yerr[alg] = np.array([data.get((alg, str(i)), {}).get('time_stddev', None) for i in range(1, 41)], dtype=float)
+        # yerr[alg] = np.array(yerr[alg], dtype=float)
+        yerr[alg] = np.array([data.get((alg, str(i)), {}).get('time_stddev', None) for i in range(1, 41)], dtype=float)
         datframe[alg] = y[alg]
         datframe[alg + '_error'] = yerr[alg]
         datframe2['Avg'].append(np.mean(y[alg]))
         datframe2['Std'].append(np.mean(yerr[alg]))
         # plt.errorbar(x, y, yerr=yerr, label=alg)
-    # df = pd.DataFrame(datframe)
-    # df.to_csv('../data_time.csv', index=False)
-    df2 = pd.DataFrame(datframe2)
-    df2.to_csv('data2_time.csv', index=False)
+    df = pd.DataFrame(datframe)
+    df.to_csv('../data_time.csv', index=False)
+    # df2 = pd.DataFrame(datframe2)
+    # df2.to_csv('data2_time.csv', index=False)
     # plt.xlabel('Data')
     # plt.ylabel('Empirical Approximation Ratio')
     # plt.legend()
