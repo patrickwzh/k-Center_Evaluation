@@ -6,18 +6,22 @@ import time
 import math
 import pickle
 
+
 def eval(algorithm, data_path, p=1):
     data = utils.load_data(data_path)
     algorithm_class = globals()[algorithm]
-    if algorithm == 'Scr_p':
+    if algorithm == "Scr_p":
         algo_instance = algorithm_class(data, p)
     else:
         algo_instance = algorithm_class(data)
     start = time.time()
     result = algo_instance.run()
     end = time.time()
-    print(f"Evaluating {algorithm} on {data_path}: make-span {result[1]} in {end - start:.8f} seconds")
+    print(
+        f"Evaluating {algorithm} on {data_path}: make-span {result[1]} in {end - start:.8f} seconds"
+    )
     return result, end - start
+
 
 class Algorithm:
     def __init__(self, data):
@@ -27,7 +31,7 @@ class Algorithm:
         self.k = data.k
         self.data = data
         random.seed(time.time())
-    
+
     def setDist(self, v, C):
         if C == []:
             return 0
@@ -38,6 +42,7 @@ class Algorithm:
 
     def run(self) -> Tuple[List[int], float]:
         pass
+
 
 class Gon(Algorithm):
     def __init__(self, data):
@@ -54,10 +59,11 @@ class Gon(Algorithm):
             rest.remove(ci)
         return C, self.makespan(C)
 
+
 class HS(Algorithm):
     def __init__(self, data):
         super().__init__(data)
-    
+
     def check(self, r):
         rest = set(range(1, self.n + 1))
         C = []
@@ -87,6 +93,7 @@ class HS(Algorithm):
                 res = C
         return res, self.makespan(res)
 
+
 class Gr(Algorithm):
     def __init__(self, data):
         super().__init__(data)
@@ -99,10 +106,11 @@ class Gr(Algorithm):
             C.append(ci)
         return C, self.makespan(C)
 
+
 class CDS(Algorithm):
     def __init__(self, data):
         super().__init__(data)
-    
+
     def getNeighbors(self, v, r):
         return [u for u in range(1, self.n + 1) if self.data.dist(v, u) <= r]
 
@@ -126,10 +134,14 @@ class CDS(Algorithm):
                     score[u] -= 1
             C.append(vf)
         return C
-    
+
     def run(self):
-        C = min([self.check(self.data.allDists[i]) for i in range(self.m)], key=lambda x: self.makespan(x))
+        C = min(
+            [self.check(self.data.allDists[i]) for i in range(self.m)],
+            key=lambda x: self.makespan(x),
+        )
         return C, self.makespan(C)
+
 
 class CDSh(CDS):
     def __init__(self, data):
@@ -138,7 +150,7 @@ class CDSh(CDS):
     def run(self):
         low, high = 0, self.m - 1
         res = None
-        minMakespan = float('inf')
+        minMakespan = float("inf")
         while low < high:
             mid = (low + high) // 2
             C = self.check(self.data.allDists[mid])
@@ -149,6 +161,7 @@ class CDSh(CDS):
                 low = mid + 1
         return res, self.makespan(res)
 
+
 class CDSh_p(CDS):
     def __init__(self, data):
         super().__init__(data)
@@ -156,10 +169,13 @@ class CDSh_p(CDS):
     def run(self):
         low, high = 0, self.m - 1
         res = None
-        minMakespan = float('inf')
+        minMakespan = float("inf")
         while low < high:
             mid = (low + high) // 2
-            C = min([self.check(self.data.allDists[mid]) for _ in range(self.n)], key=lambda x: self.makespan(x))
+            C = min(
+                [self.check(self.data.allDists[mid]) for _ in range(self.n)],
+                key=lambda x: self.makespan(x),
+            )
             if self.makespan(C) < minMakespan:
                 high = mid
                 res = C
@@ -167,10 +183,11 @@ class CDSh_p(CDS):
                 low = mid + 1
         return res, self.makespan(res)
 
+
 class Scr(Algorithm):
     def __init__(self, data):
         super().__init__(data)
-    
+
     def getNeighbors(self, v, r):
         return [u for u in range(1, self.n + 1) if self.data.dist(v, u) <= r]
 
@@ -199,9 +216,9 @@ class Scr(Algorithm):
                     if covcnt[y] > 0:
                         covcnt[y] -= 1
                         score[y] += 1
-            score[x] = float('inf')
+            score[x] = float("inf")
         return D
-    
+
     def run(self):
         low, high = 0, len(self.data.allDists) - 1
         res = None
@@ -216,11 +233,12 @@ class Scr(Algorithm):
                 low = mid + 1
         return res, self.makespan(res)
 
+
 class Scr_p(Scr):
     def __init__(self, data, p):
         super().__init__(data)
         self.p = p
-    
+
     def topp(self, score, p):
         top_nodes = []
         for i in range(1, self.n + 1):
@@ -255,15 +273,18 @@ class Scr_p(Scr):
                     if covcnt[y] > 0:
                         covcnt[y] -= 1
                         score[y] += 1
-            score[x] = float('inf')
+            score[x] = float("inf")
         return D
-    
+
     def run(self):
         low, high = 0, len(self.data.allDists) - 1
         res = None
         while low < high:
             mid = (low + high) // 2
-            C = min([self.check(self.data.allDists[mid]) for _ in range(self.n)], key=lambda x: len(x))
+            C = min(
+                [self.check(self.data.allDists[mid]) for _ in range(self.n)],
+                key=lambda x: len(x),
+            )
             if len(C) <= self.k:
                 high = mid
                 res = C
@@ -271,19 +292,22 @@ class Scr_p(Scr):
                 low = mid + 1
         return res, self.makespan(res)
 
+
 class LS(Algorithm):
     def __init__(self, data):
         super().__init__(data)
-    
+
     def getNearest(self, C, i):
         return min(range(self.k), key=lambda x: self.data.dist(i, C[x]))
-    
+
     def pickCenter(self, S):
         return min(S, key=lambda x: max([self.data.dist(x, s) for s in S]))
-    
+
     def runOnce(self, C=[]):
         changed = True
-        C += random.sample([i for i in range(1, self.n + 1) if i not in C], self.k - len(C))
+        C += random.sample(
+            [i for i in range(1, self.n + 1) if i not in C], self.k - len(C)
+        )
         while changed:
             changed = False
             nearest = [set() for _ in range(self.k)]
@@ -294,30 +318,39 @@ class LS(Algorithm):
                 C = C_new
                 changed = True
         return C, self.makespan(C)
-    
+
     def run(self):
         res = min([self.runOnce(C=[]) for _ in range(5)], key=lambda x: x[1])
         return res
+
 
 class LS_Scr(LS):
     def __init__(self, data):
         super().__init__(data)
         self.scr = Scr(data)
-    
+
     def run(self):
-        res = min([self.runOnce(list(self.scr.run()[0])) for _ in range(5)], key=lambda x: x[1])
+        res = min(
+            [self.runOnce(list(self.scr.run()[0])) for _ in range(5)],
+            key=lambda x: x[1],
+        )
         return res
+
 
 class SA(LS):
     def __init__(self, data):
         super().__init__(data)
-        self.sparseness = 1 / (self.k * (math.log(2.0 * self.m / self.n) / math.log(self.n)) ** 2)
-    
+        self.sparseness = 1 / (
+            self.k * (math.log(2.0 * self.m / self.n) / math.log(self.n)) ** 2
+        )
+
     def modify(self, C):
         pass
-    
+
     def runOnce(self, C=[], T=1.0):
-        C += random.sample([i for i in range(1, self.n + 1) if i not in C], self.k - len(C))
+        C += random.sample(
+            [i for i in range(1, self.n + 1) if i not in C], self.k - len(C)
+        )
         initial = self.makespan(C)
         self.T = T * initial
         alpha = 0.99
@@ -329,6 +362,7 @@ class SA(LS):
             self.T *= alpha
         return C, self.makespan(C)
 
+
 class SA_Swp(SA):
     def __init__(self, data):
         super().__init__(data)
@@ -337,41 +371,49 @@ class SA_Swp(SA):
     def modify(self, C):
         C_new = C.copy()
         c_idx = random.randrange(self.k)
-        candidates = [i for i in range(1, self.n+1) if i not in C]
+        candidates = [i for i in range(1, self.n + 1) if i not in C]
         new_center = random.choice(candidates)
         old_center = C_new[c_idx]
         C_new[c_idx] = new_center
         return C_new
 
+
 class SA_Gon(SA):
     def __init__(self, data):
         super().__init__(data)
-    
+
     def modify(self, C):
         C_new = C.copy()
         c_idx = random.randrange(self.k)
         old_center = C_new.pop(c_idx)
-        candidates = [i for i in range(1, self.n+1) if i not in C]
+        candidates = [i for i in range(1, self.n + 1) if i not in C]
         new_center = max(candidates, key=lambda x: self.setDist(x, C_new))
         C_new.append(new_center)
         return C_new
+
 
 class SA_Gon_Scr(SA_Gon):
     def __init__(self, data):
         super().__init__(data)
         self.scr = Scr(data)
-    
+
     def run(self):
-        res = min([self.runOnce(C=list(self.scr.run()[0]), T=0.1) for _ in range(3)], key=lambda x: x[1])
+        res = min(
+            [self.runOnce(C=list(self.scr.run()[0]), T=0.1) for _ in range(3)],
+            key=lambda x: x[1],
+        )
         return res
+
 
 class SA_Swp_Scr(SA_Swp):
     def __init__(self, data):
         super().__init__(data)
         self.scr = Scr(data)
-    
+
     def runOnce(self, C=[], T=1.0):
-        C += random.sample([i for i in range(1, self.n + 1) if i not in C], self.k - len(C))
+        C += random.sample(
+            [i for i in range(1, self.n + 1) if i not in C], self.k - len(C)
+        )
         initial = self.makespan(C)
         self.T = T * initial
         alpha = math.exp(-0.01 * self.sparseness)
@@ -382,7 +424,15 @@ class SA_Swp_Scr(SA_Swp):
                 C = C_new
             self.T *= alpha
         return C, self.makespan(C)
-    
+
     def run(self):
-        res = min([self.runOnce(C=list(self.scr.run()[0]), T=math.exp(-3.0 / self.sparseness)) for _ in range(3)], key=lambda x: x[1])
+        res = min(
+            [
+                self.runOnce(
+                    C=list(self.scr.run()[0]), T=math.exp(-3.0 / self.sparseness)
+                )
+                for _ in range(3)
+            ],
+            key=lambda x: x[1],
+        )
         return res
